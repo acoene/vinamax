@@ -16,7 +16,8 @@ var (
 	gammaoveralpha float64                                                      //g/1+alfa^2
 	Temp           float64                                              = -1    // Temperature in K
 	Ku1            float64                                              = 0     // Uniaxial anisotropy constant in J/m**3
-	Errortolerance float64                                              = 1e-8
+	Kc1            float64                                              = 0     // Cubic anisotropy constant in J/m**3
+	Errortolerance float64                                              = 1e-5
 	Thresholdbeta  float64                                              = 0.3 // The threshold value for the FMM
 	demagtime      float64
 	universe       node           // The entire universe of the simulation
@@ -29,13 +30,19 @@ var (
 	outputinterval float64
 	maxtauwitht    float64 = 0. //maximum torque during the simulations with temperature
 	//	suggest_timestep bool    = false
-	order       int            = 5 //the order of the solver
-	radii       [32768]float64     //table with all radii
-	radiusindex int                //current index in the table of radii
+	order       int = 5 //the order of the solver
+	constradius float64
+	logradius_m float64
+	logradius_s float64
+	Tau0 float64 =1e-8
 
 	msatcalled          bool = false
 	radiuscalled        bool = false
+	constradiuscalled   bool = false
+	logradiuscalled     bool = false
 	uaniscalled         bool = false
+	c1called            bool = false
+	c2called            bool = false
 	worldcalled         bool = false
 	magnetisationcalled bool = false
 	treecalled          bool = false
@@ -86,7 +93,10 @@ func syntaxrun() {
 		log.Fatal("You have to specify the size of the particles")
 	}
 	if uaniscalled == false && Ku1 != 0 {
-		log.Fatal("You have to specify the anisotropy-axis")
+		log.Fatal("You have to specify the uniaxial anisotropy-axis")
+	}
+	if (c1called == false || c2called == false) && Kc1 != 0 {
+		log.Fatal("You have to specify the cubic anisotropy-axes")
 	}
 	if worldcalled == false {
 		log.Fatal("You have define a \"World\"")
@@ -104,7 +114,7 @@ func syntaxrun() {
 		log.Fatal("You have to run Output(interval) when calling tableadd")
 	}
 	if Brown == true && Adaptivestep == true {
-	//	log.Fatal("Brown Temperature can only be used with fixed timestep")
+		log.Fatal("Brown Temperature can only be used with fixed timestep")
 	}
 	if Jumpnoise == true {
 		resetswitchtimes(universe.lijst)

@@ -20,7 +20,7 @@ func Setrandomseed(a int64) {
 
 // factor 4/3pi in "number" because they are spherical
 func (p *particle) calculatetempnumber() {
-	p.tempnumber = math.Sqrt((2. * kb * Alpha * Temp) / (gamma0 * p.msat * 4. / 3. * math.Pi * cube(p.r) * Dt))
+	p.tempnumber = math.Sqrt((2. * kb * Alpha * Temp) / (gamma0 * p.msat * 4. / 3. * math.Pi * cube(p.r)))
 }
 
 func calculatetempnumbers(lijst []*particle) {
@@ -39,7 +39,7 @@ func (p *particle) temp() vector {
 			etaz := rng.NormFloat64()
 
 			B_therm = vector{etax, etay, etaz}
-			B_therm = B_therm.times(p.tempnumber)
+			B_therm = B_therm.times(p.tempnumber/math.Sqrt(Dt))
 		}
 	}
 	return B_therm
@@ -57,5 +57,18 @@ func (p *particle) anis() vector {
 	//2*Ku1*(m.u)*u/p.msat
 
 	mdotu := p.m.dot(p.u_anis)
-	return p.u_anis.times(2. * Ku1 * mdotu / p.msat)
+	uniax := p.u_anis.times(2. * Ku1 * mdotu / p.msat)
+
+	cubic:=vector{0.,0.,0.}
+	if(Kc1!=0){
+	c1m := p.m.dot(p.c1_anis)
+	c2m := p.m.dot(p.c2_anis)
+	c3m := p.m.dot(p.c3_anis)
+	firstterm := p.c1_anis.times(c1m * (c3m*c3m + c2m*c2m))
+	secondterm := p.c2_anis.times(c2m * (c3m*c3m + c1m*c1m))
+	thirdterm := p.c3_anis.times(c3m * (c2m*c2m + c1m*c1m))
+
+	cubic = firstterm.add(secondterm.add(thirdterm)).times(-2. * Kc1 / p.msat)
+	}	
+	return uniax.add(cubic)
 }
